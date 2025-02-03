@@ -84,17 +84,7 @@ def calc_data(path):
         dt = time_arr[i] - time_arr[i-1]
         crate_arr.append(dR / dt)
 
-    # create new directory and cd to it
-    directory_name = '/' + os.path.splitext(os.path.basename(path))[0] + '_pics'
-    og_directory = os.getcwd()
-    if not os.path.exists(og_directory + directory_name): os.mkdir(og_directory + directory_name)
-    os.chdir(og_directory + directory_name)
-
-    # plot pictures
-    plot(time_arr, radg_arr, pic_name='radg', xlabel='time (s)', ylabel='contraction rate (1/s)', title='System Radius per Time', dot_color='r', dot_style='-o')
-    plot(time_arr, force_arr, pic_name='force', xlabel='time (s)', ylabel='total force (pN)', title='Force on Network per Time', dot_color='r', dot_style='-o')
-    plot(time_arr, tension_arr, pic_name='tension', xlabel='time (s)', ylabel='tension (pN)', title='Tension on Network per Time', dot_color='r', dot_style='-o')
-    plot(time_arr[1:], crate_arr, pic_name='crate', xlabel='time (s)', ylabel='contraction rate (um/s)', title='Contraction Rate per Time', dot_color='r', dot_style='-o')
+    return [time_arr, radg_arr, crate_arr, force_arr, tension_arr]
 
 def main(args):
     """
@@ -110,8 +100,20 @@ def main(args):
 
     for p in paths:
         sys.stdout.write(f"grabbing data from {p}\n")
-        calc_data(p)
-    
+        time_arr, radg_arr, crate_arr, force_arr, tension_arr = calc_data(p)
+
+        # create new directory and cd to it
+        directory_name = '/' + os.path.splitext(os.path.basename(p))[0] + '_pics'
+        og_directory = os.getcwd()
+        if not os.path.exists(og_directory + directory_name): os.mkdir(og_directory + directory_name)
+        os.chdir(og_directory + directory_name)
+
+        # plot pictures
+        plot(time_arr, radg_arr, pic_name='radg', xlabel='time (s)', ylabel='contraction rate (1/s)', title='System Radius per Time', dot_color='r', dot_style='-o')
+        plot(time_arr, force_arr, pic_name='force', xlabel='time (s)', ylabel='total force (pN)', title='Force on Network per Time', dot_color='r', dot_style='-o')
+        plot(time_arr, tension_arr, pic_name='tension', xlabel='time (s)', ylabel='tension (pN)', title='Tension on Network per Time', dot_color='r', dot_style='-o')
+        plot(time_arr[1:], crate_arr, pic_name='crate', xlabel='time (s)', ylabel='contraction rate (um/s)', title='Contraction Rate per Time', dot_color='r', dot_style='-o')
+        
     return 0
 
 #------------------------------------------------------------------------------------
