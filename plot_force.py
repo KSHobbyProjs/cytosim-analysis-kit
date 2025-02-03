@@ -79,10 +79,10 @@ def calc_data(path):
         tension_arr.append(sum([float(i[4]) for i in val]))
     
     # use finite difference to approximate contraction rate
-    for i in len(time_arr[1:]):
+    for i in range(1, len(time_arr)):
         dR = radg_arr[i] - radg_arr[i-1]
-        dt = time[i] - time_arr[i-1]
-        crate.append(dR / dt)
+        dt = time_arr[i] - time_arr[i-1]
+        crate_arr.append(dR / dt)
 
     # create new directory and cd to it
     directory_name = '/' + os.path.splitext(os.path.basename(path))[0] + '_pics'
