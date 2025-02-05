@@ -12,10 +12,12 @@ Required Packages:
     matplotlib (install with pip via 'pip install matplotlib')
  
 Syntax:
-    plot_force.py file_name [file_name2] [...]
+    plot_force.py file_name [file_name2] [...] [-v]
     
     - file_name1: the pickle file that the program needs to read
     - if other file_name are given, it will calculate the values using the data from these files as well
+    - if -v is put, another .pkl file, file_name.stats.pkl will be output that contains the 
+      time, radius, contraction rate, force, and tension in an array format
 
 Note:   
     This script assumes that the .pkl file was output by read_force.py and that the data read by read_force.py
@@ -116,14 +118,15 @@ def main(args):
         # if verbose, also output .pkl file including calculated stats
         if v:
             data = [time_arr, radg_arr, crate_arr, force_arr, tension_arr]
-            file_name = os.path.basename(p)[0] + '.stats.pkl'
+            file_name = os.path.splitext(os.path.basename(p))[0] + '.stats.pkl'
             with open(file_name, 'wb') as file:
                 pickle.dump(data, file)
 
         # create new directory and cd to it
         directory_name = '/' + os.path.splitext(os.path.basename(p))[0] + '_pics'
         og_directory = os.getcwd()
-        if not os.path.exists(og_directory + directory_name): os.mkdir(og_directory + directory_name)
+        if not os.path.exists(og_directory + directory_name):
+            os.mkdir(og_directory + directory_name)
         os.chdir(og_directory + directory_name)
 
         # plot pictures
