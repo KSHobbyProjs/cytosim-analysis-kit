@@ -32,7 +32,7 @@ try:
     import pickle
 except ImportError:
     sys.stderr.write("Error: could not load necessary python modules\n")
-    sys.exit()
+    sys.exit(1)
 
 #----------------------------------------------------------------------------------
 def read(path):

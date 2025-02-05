@@ -5,17 +5,21 @@
 # Copyright  K. Scarbro; 2025--
 
 """
-    Reads .pkl files and saves plots of the radius of gyration, the rate of contraction, the forces on the
-    fibers, and the tension on the fibers
+    Reads .pkl files ouput from read_force.py and saves plots of the radius of gyration, the rate of contraction,
+    the forces on the fibers, and the tension on the fibers per time
 
 Required Packages:
     matplotlib (install with pip via 'pip install matplotlib')
-
+ 
 Syntax:
     plot_force.py file_name [file_name2] [...]
     
     - file_name1: the pickle file that the program needs to read
     - if other file_name are given, it will calculate the values using the data from these files as well
+
+Note:   
+    This script assumes that the .pkl file was output by read_force.py and that the data read by read_force.py
+    was the output of 'report fiber:force'
 
 Output:
      file_name directory with plots of the radius of gyration, the contraction rate, the forces on the fibers, and 
@@ -36,7 +40,7 @@ try:
     import matplotlib.pylab as plt
 except ImportError:
     sys.stderr.write("Error: could not load necessary python modules\n")
-    sys.exit()
+    sys.exit(1)
 
 #----------------------------------------------------------------------------------
 def plot(xdata, ydata, **kwargs):
@@ -67,6 +71,10 @@ def calc_data(path):
     force_arr = []
     tension_arr = []
     for key, val in data.items():
+        if len(val[0]) != 5:
+            sys.stdout.write(f"{path} file does not contain the correct amount of columns of data. does this .pkl file come from read_force.py acting on a file printed from 'report force:fiber'?\n")
+            sys.exit()
+
         time_arr.append(float(key))
 
         mu = (1 / len(val))**2 * ( sum([float(i[0]) for i in val])**2 + sum([float(i[1]) for i in val])**2 )
@@ -91,9 +99,12 @@ def main(args):
     read command line arguments and process commands
     """
     paths = []
+    v = False
     for arg in args:
         if os.path.isfile(arg):
             paths.append(os.path.abspath(arg))
+        elif arg == '-v':
+            v = True
         else:
             sys.stdout.write(f"{arg} isn't a filename\n")
             sys.exit()
@@ -101,6 +112,13 @@ def main(args):
     for p in paths:
         sys.stdout.write(f"grabbing data from {p}\n")
         time_arr, radg_arr, crate_arr, force_arr, tension_arr = calc_data(p)
+        
+        # if verbose, also output .pkl file including calculated stats
+        if v:
+            data = [time_arr, radg_arr, crate_arr, force_arr, tension_arr]
+            file_name = os.path.basename(p)[0] + '.stats.pkl'
+            with open(file_name, 'wb') as file:
+                pickle.dump(data, file)
 
         # create new directory and cd to it
         directory_name = '/' + os.path.splitext(os.path.basename(p))[0] + '_pics'
