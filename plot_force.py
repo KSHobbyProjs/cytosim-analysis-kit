@@ -133,7 +133,7 @@ def main(args):
         plot(time_arr, radg_arr, pic_name='radg', xlabel='time (s)', ylabel='contraction rate (1/s)', title='System Radius per Time', dot_color='r', dot_style='-o')
         plot(time_arr, force_arr, pic_name='force', xlabel='time (s)', ylabel='total force (pN)', title='Force on Network per Time', dot_color='r', dot_style='-o')
         plot(time_arr, tension_arr, pic_name='tension', xlabel='time (s)', ylabel='tension (pN)', title='Tension on Network per Time', dot_color='r', dot_style='-o')
-        plot(time_arr[1:], crate_arr, pic_name='crate', xlabel='time (s)', ylabel='contraction rate (um/s)', title='Contraction Rate per Time', dot_color='r', dot_style='-o')
+        plot(time_arr[1:], crate_arr, pic_name='crate', xlabel='time (s)', ylabel='radius of gyration (um/s)', title='Contraction Rate per Time', dot_color='r', dot_style='-o')
         
     return 0
 

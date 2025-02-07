@@ -62,16 +62,18 @@ def plot(x, y, z, **kwargs):
     fig, ax = plt.subplots()
 
     pic_name = 'plot'
+    clabel = None
     for key, val in kwargs.items():
         if key == 'xlabel': ax.set_xlabel(val)
         elif key == 'ylabel': ax.set_ylabel(val)
         elif key == 'title': ax.set_title(val)
+        elif key == 'clabel': clabel = val
         elif key == 'pic_name': pic_name = val
         else: sys.stdout.write(f"{key} is an unknown parameter. Ignored.")
 
 
-    pos = ax.scatter(x, y, c=z, cmap='viridis')
-    fig.colorbar(pos, ax=ax)
+    pos = ax.scatter(x, y, c=z, cmap='viridis', s=1280)
+    fig.colorbar(pos, ax=ax, label=clabel)
 
     plt.savefig(pic_name + '.png')
 
@@ -149,10 +151,10 @@ def main(args):
         os.mkdir(og_directory + directory_name)
     os.chdir(og_directory + directory_name)
 
-    plot(motor_arr, fiber_arr, [peak[0] for peak in peak_arr], pic_name='peakradg', xlabel='motor number', ylabel='fiber number', title='Peak Radius for Various Fiber and Motor Numbers')
-    plot(motor_arr, fiber_arr, [peak[1] for peak in peak_arr], pic_name='peakcrate', xlabel='motor number', ylabel='fiber number', title='Peak Contraction Rate for Various Fiber and Motor Numbers')
-    plot(motor_arr, fiber_arr, [peak[2] for peak in peak_arr], pic_name='peakforce', xlabel='motor number', ylabel='fiber number', title='Peak Force for Various Fiber and Motor Numbers')
-    plot(motor_arr, fiber_arr, [peak[3] for peak in peak_arr], pic_name='peaktension', xlabel='motor number', ylabel='fiber number', title='Peak Tension for Various Fiber and Motor Numbers')
+    plot(motor_arr, fiber_arr, [peak[0] for peak in peak_arr], pic_name='peakradg', xlabel='motor number', ylabel='fiber number', clabel=r'$R$ ($\mu$m)', title='Peak Radius for Various Fiber and Motor Numbers')
+    plot(motor_arr, fiber_arr, [peak[1] for peak in peak_arr], pic_name='peakcrate', xlabel='motor number', ylabel='fiber number', clabel=r'$\dot{R}$ ($\mu$m/s)', title='Peak Contraction Rate for Various Fiber and Motor Numbers')
+    plot(motor_arr, fiber_arr, [peak[2] for peak in peak_arr], pic_name='peakforce', xlabel='motor number', ylabel='fiber number', clabel=r'F (pN)',  title='Peak Force for Various Fiber and Motor Numbers')
+    plot(motor_arr, fiber_arr, [peak[3] for peak in peak_arr], pic_name='peaktension', xlabel='motor number', ylabel='fiber number', clabel=r'T (pN)',  title='Peak Tension for Various Fiber and Motor Numbers')
 
 #--------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
