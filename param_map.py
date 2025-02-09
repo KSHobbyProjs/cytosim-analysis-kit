@@ -93,8 +93,10 @@ def read_pkl(path, name):
     peak_crate = min(data[2])
     peak_force = max(data[3])
     peak_tension = max(data[4])
+    if len(data[0]) > 1:
+        integral_tension = sum(data[4][:-1]) * (data[0][1] - data[0][0])
 
-    return [peak_radg, peak_crate, peak_force, peak_tension]
+    return [peak_radg, peak_crate, peak_force, peak_tension, integral_tension]
 
 def read_config(path):
     """
@@ -155,6 +157,7 @@ def main(args):
     plot(motor_arr, fiber_arr, [peak[1] for peak in peak_arr], pic_name='peakcrate', xlabel='motor number', ylabel='fiber number', clabel=r'$\dot{R}$ ($\mu$m/s)', title='Peak Contraction Rate for Various Fiber and Motor Numbers')
     plot(motor_arr, fiber_arr, [peak[2] for peak in peak_arr], pic_name='peakforce', xlabel='motor number', ylabel='fiber number', clabel=r'F (pN)',  title='Peak Force for Various Fiber and Motor Numbers')
     plot(motor_arr, fiber_arr, [peak[3] for peak in peak_arr], pic_name='peaktension', xlabel='motor number', ylabel='fiber number', clabel=r'T (pN)',  title='Peak Tension for Various Fiber and Motor Numbers')
+    plot(motor_arr, fiber_arr, [peak[4] for peak in peak_arr], pic_name = 'inttension', xlabel='motor number', ylabel='fiber number', clabel=r'$\delta$p (pNs)', title='Time Integral of Tension for Various Fiber & Motor #s')
 
 #--------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
