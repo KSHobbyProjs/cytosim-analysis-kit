@@ -5,8 +5,9 @@
 # Copyright  K. Scarbro; 2025--
 
 """
-    Reads .pkl files ouput from read_force.py and saves plots of the radius of gyration, the rate of contraction,
-    the forces on the fibers, and the tension on the fibers per time
+    Reads .pkl files output from read_force.py and saves plots of the radius of gyration, the rate of contraction,
+    the forces on the fibers, and the tension on the fibers per time stored in a force_pics directory. If -v is set,
+    it also outputs a stats.pkl file containing the data output in a binary format.
 
 Required Packages:
     matplotlib (install with pip via 'pip install matplotlib')
@@ -77,16 +78,16 @@ def calc_data(path):
             sys.stdout.write(f"{path} file does not contain the correct amount of columns of data. does this .pkl file come from read_force.py acting on a file printed from 'report force:fiber'?\n")
             sys.exit()
 
-        time_arr.append(float(key))
+        time_arr.append(key)
 
-        mu = (1 / len(val))**2 * ( sum([float(i[0]) for i in val])**2 + sum([float(i[1]) for i in val])**2 )
-        radg = (1 / len(val)) * sum([float(i[0])**2 + float(i[1])**2 for i in val])
+        mu = (1 / len(val))**2 * ( sum([i[0] for i in val])**2 + sum([i[1] for i in val])**2 )
+        radg = (1 / len(val)) * sum([i[0]**2 + i[1]**2 for i in val])
         radg_arr.append( (radg - mu)**(1 / 2) )
          
-        force = sum([(float(i[2])**2 + float(i[3])**2 )**(1 / 2) for i in val])
+        force = sum([(i[2]**2 + i[3]**2 )**(1 / 2) for i in val])
         force_arr.append(force)
 
-        tension_arr.append(sum([float(i[4]) for i in val]))
+        tension_arr.append(sum([i[4] for i in val]))
     
     # use finite difference to approximate contraction rate
     for i in range(1, len(time_arr)):

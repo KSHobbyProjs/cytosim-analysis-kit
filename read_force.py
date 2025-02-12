@@ -45,12 +45,12 @@ def read(path):
         data_dict = dict()
         for line in lines[1:]:
             if line.startswith('% time'):
-                time = line[7:].strip()
+                time = float(line[7:].strip())
                 data_dict[time] = []
             elif not line.startswith('%') and not line.startswith('\n'):
                 # inconsistent delimeter spacing, so split by delimeter ' ', and remove all '' elements:
                 line_list = list(filter(lambda b: b, line.strip().split(' ')))[1:]
-                data_dict[time].append([val for val in line_list])
+                data_dict[time].append([float(val) for val in line_list])
     
     # write data to pkl file
     file_name = os.path.splitext(os.path.basename(path))[0] + '.pkl'
