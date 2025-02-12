@@ -1,29 +1,32 @@
 #!/bin/env bash
 #
-# master.bash is a script designed to run read_forces.py and plot_forces.py one after another
+# master.bash is a script designed to run read_force.py, plot_force.py, and param_map.py one after another
 #
 # Copyright K. Scarbro; 2025--
 
 # 
-# Takes in "report fiber:force" files and executes read_forces.py and plot_forces.py on these files
+# Takes as input a series of directories containing sim information. Outputs a force_pics directory in each input directory containing pictures
+# of force, tension, contraction rate, radius of gyration per time. Also outputs a param_pics directory in the cwd that includes parameter maps
+# of peak force, peak tension, peak contraction rate, peak radius, and integral of tension. Each input directory is assumed to have a force.txt file
+# (as a result of "report fiber:force > force.txt")
 #
 # Note:
 #   master.bash attempts to activate a python environment with matplotlib installed since plot_force.py requires the matplotlib package to run
 #   it assumes that the environment is located at '~/Cytosim/.venv/'. Change this path to wherever your python environment is located
 #
 # Syntax:
-#   master.bash file_name1 [file_name2] [...]
+#   master.bash directory [...]
 #
-#   - file_name1: the file name that the program needs to search to find the data
-#   - if other file_name are given, it will calculate the values using the data from these files as well
+#   - directory: the file name that the program needs to search to find the data
+#   - if other directories are given, it will calculate the values using the data from these directories as well
 #
 # Output: 
-#   directories of name file_name1_pics which include pngs of the radius of contraction (radg.png), forces on 
-#   the network (force.png), and tension on the network (tension.png)
+#   - force_pics directory in each input directory containing pictures of force, tension, contraction rate, radius of gyration per time
+#   - param_pics directory in the cwd that includes parameter maps of peak force, peak tension, peak contraction rate, peak radius, and integral of tension.
 # 
 # Examples: 
-#   master.bash force.txt
-#   master.bash force.txt force1.txt
+#   master.bash param0001
+#   master.bash param****
 #
 # K. Scarbro 01.2025
 
@@ -32,23 +35,15 @@ source ~/Cytosim/.venv/bin/activate
 
 # check if at least one arguments is given
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <file_name1> <file_name2> <...>"
-    exit 1
+    echo "Usage: $0 <directory> <...>"
+    exit 0
 fi
 
-file_name1="$1"
-echo "reading $file_name1"
+~/Cytosim/scan/scan.py "~/Cytosim/python/read_force.py force.txt" ${@:1}
 
-./read_force.py "$file_name1"
+~/Cytosim/scan/scan.py "~/Cytosim/python/plot_force.py -v force.pkl" ${@:1}
 
-basename=$(basename "$file_name1")
-basename=${basename%.*}
-extension=".pkl"
-basename="${basename}${extension}"
-
-./plot_force.py "$basename"
+~/Cytosim/python/param_map.py ${@:1} "dotsize=800" "xname=Motor #" "yname=Fiber #"
 
 # deactivate python environment
 deactivate
-
-
