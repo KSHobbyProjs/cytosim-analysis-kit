@@ -39,9 +39,9 @@ if [ $# -lt 1 ]; then
     exit 0
 fi
 
-~/Cytosim/scan/scan.py "~/Cytosim/python/read_force.py force.txt" ${@:1}
+~/Cytosim/scan/scan.py "~/Cytosim/python/read_force.py force.txt" "nproc=4" ${@:1}
 
-~/Cytosim/scan/scan.py "~/Cytosim/python/plot_force.py -v force.pkl" ${@:1}
+~/Cytosim/scan/scan.py "~/Cytosim/python/plot_force.py -v force.pkl" "nproc=4" ${@:1}
 
 ~/Cytosim/python/param_map.py ${@:1} "dotsize=800" "xname=Motor #" "yname=Fiber #"
 
