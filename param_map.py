@@ -33,12 +33,13 @@ Note:
     output by report fiber:force
 
 Syntax:
-    param_map.py direc [other directories] [name=?] [xname=?] [yname=?]
+    param_map.py direc [other directories] [name=?] [xname=?] [yname=?] [dotsize=?]
    
     - direc: the name of the directory containing the config.cym and stats.pkl files; more directories can (and should) be given
     - if name= is set, it changes the default file from force.stats.pkl to whatever filename was given after name=
     - xname and yname are the names of the parameters being altered (the default are motor and fiber number)
-
+    - dotsize changes the size of the dots (1000 is the default value)
+    
 Output:
      param_pics directory containing parameter maps of the peak force, tension, radius, and contraction rate 
 
@@ -64,16 +65,17 @@ def plot(x, y, z, **kwargs):
 
     pic_name = 'plot'
     clabel = None
+    dot_size = 1000
     for key, val in kwargs.items():
         if key == 'xlabel': ax.set_xlabel(val)
         elif key == 'ylabel': ax.set_ylabel(val)
         elif key == 'title': ax.set_title(val)
         elif key == 'clabel': clabel = val
         elif key == 'pic_name': pic_name = val
+        elif key == 'dotsize': dot_size = val
         else: sys.stdout.write(f"{key} is an unknown parameter. Ignored.")
 
-
-    pos = ax.scatter(x, y, c=z, cmap='viridis', s=800)
+    pos = ax.scatter(x, y, c=z, cmap='viridis', s=dot_size)
     fig.colorbar(pos, ax=ax, label=clabel)
 
     plt.savefig(pic_name + '.png')
@@ -127,8 +129,9 @@ def main(args):
     """
     name = 'force.stats.pkl'
     paths = []
-    x_name = 'motor number'
-    y_name = 'fiber number'
+    x_name = 'Motor Number'
+    y_name = 'Fiber Number'
+    dot_size = 1000
     for arg in args:
         if os.path.isdir(arg):
             paths.append(os.path.abspath(arg))
@@ -138,10 +141,16 @@ def main(args):
             x_name = arg[6:]
         elif arg.startswith('yname='):
             y_name = arg[6:]
+        elif arg.startswith('dotsize='):
+            dot_size = int(arg[8:])
         else:
             sys.stdout.write(f"Warning: unexpected argument {arg}\n")
             sys.exit()
-    
+
+    if not paths:
+        sys.stdout.write("No directories were given\n")
+        sys.exit()
+
     x_arr  = []
     y_arr  = []
     peak_arr = []
@@ -160,14 +169,17 @@ def main(args):
         os.mkdir(og_directory + directory_name)
     os.chdir(og_directory + directory_name)
 
-    plot(x_arr, y_arr, [peak[0] for peak in peak_arr], pic_name='peakradg', xlabel=x_name, ylabel=y_name, clabel=r'$R$ ($\mu$m)', title=f'Peak Radius for Various {x_name} and {y_name}')
-    plot(x_arr, y_arr, [peak[1] for peak in peak_arr], pic_name='peakcrate', xlabel=x_name, ylabel=y_name, clabel=r'$\dot{R}$ ($\mu$m/s)', title=f'Peak Contraction Rate for Various {x_name} and {y_name}')
-    plot(x_arr, y_arr, [peak[2] for peak in peak_arr], pic_name='peakforce', xlabel=x_name, ylabel=y_name, clabel=r'F (pN)',  title=f'Peak Force for Various {x_name} and {y_name}')
-    plot(x_arr, y_arr, [peak[3] for peak in peak_arr], pic_name='peaktension', xlabel=x_name, ylabel=y_name, clabel=r'T (pN)',  title=f'Peak Tension for Various {x_name} and {y_name}')
-    plot(x_arr, y_arr, [peak[4] for peak in peak_arr], pic_name = 'inttension', xlabel=x_name, ylabel=y_name, clabel=r'$\Delta$p (pNs)', title=f'Time Integral of Tension for Various {x_name} and {y_name}')
-    
-    plot(x_arr, y_arr, [peak[3] / y for peak, y in zip(peak_arr, y_arr)], pic_name='normpeaktension', xlabel=x_name, ylabel=y_name, clabel=r'T (pN)',  title='Normed Peak Tension for Various {x_name} and {y_name}')
-    plot(x_arr, y_arr, [peak[4] / y for peak, y in zip(peak_arr, y_arr)], pic_name = 'norminttension', xlabel=x_name, ylabel=y_name, clabel=r'$\delta$p (pNs)', title='Normed Integral of Tension for Various {x_name} and {y_name}')
+    # create tuple and dictionary for better readability (no functionality otherwise)
+    data_tup = (x_arr, y_arr)
+    label_dic = {'xlabel':x_name, 'ylabel':y_name, 'dotsize':dot_size}
+
+    plot(*data_tup, [peak[0] for peak in peak_arr], **label_dic, pic_name='peakradg', clabel=r'$R$ ($\mu$m)', title=f'Peak Radius for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[1] for peak in peak_arr], **label_dic, pic_name='peakcrate', clabel=r'$\dot{R}$ ($\mu$m/s)', title=f'Peak Contraction Rate for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[2] for peak in peak_arr], **label_dic, pic_name='peakforce', clabel=r'F (pN)',  title=f'Peak Force for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[3] for peak in peak_arr], **label_dic, pic_name='peaktension', clabel=r'T (pN)',  title=f'Peak Tension for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[4] for peak in peak_arr], **label_dic, pic_name = 'inttension', clabel=r'$\Delta$p (pNs)', title=f'Time Integral of Tension for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[3] / y for peak, y in zip(peak_arr, y_arr)], **label_dic, pic_name='normpeaktension', clabel=r'T (pN)',  title=f'Normed Peak Tension for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[4] / y for peak, y in zip(peak_arr, y_arr)], **label_dic, pic_name = 'norminttension', clabel=r'$\Delta$p (pNs)', title=f'Normed Integral of Tension for Various {x_name} and {y_name}')
 
 #--------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":

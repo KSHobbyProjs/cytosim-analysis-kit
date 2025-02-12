@@ -112,6 +112,10 @@ def main(args):
             sys.stdout.write(f"{arg} isn't a filename\n")
             sys.exit()
 
+    if not paths:
+        sys.stdout.write("No directories were given \n")
+        sys.exit()
+
     for p in paths:
         sys.stdout.write(f"grabbing data from {p}\n")
         time_arr, radg_arr, crate_arr, force_arr, tension_arr = calc_data(p)
