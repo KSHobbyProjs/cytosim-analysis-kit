@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# plot_forces.py calculates the total force, radius of gyration, and contraction rate of the network per time
+# plot_forces.py calculates the total force, total tension, radius of gyration, and contraction rate of the network per time
 #
 # Copyright  K. Scarbro; 2025--
 
