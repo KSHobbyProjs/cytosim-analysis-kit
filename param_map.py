@@ -94,12 +94,14 @@ def read_pkl(path, name):
     
     peak_radg = min(data[1])
     peak_crate = min(data[2])
+    t_crate = data[2].index(peak_crate)
     peak_force = max(data[3]) if abs(max(data[4])) > abs(min(data[4])) else min(data[4])
     peak_tension = max(data[4]) if abs(max(data[4])) > abs(min(data[4])) else min(data[4])
+    t_tension = data[4].index(peak_tension)
     if len(data[0]) > 1:
         integral_tension = sum(data[4][:-1]) * (data[0][1] - data[0][0])
 
-    return [peak_radg, peak_crate, peak_force, peak_tension, integral_tension]
+    return [peak_radg, peak_crate, peak_force, peak_tension, integral_tension, t_crate, t_tension]
 
 def read_config(path):
     """
@@ -173,13 +175,16 @@ def main(args):
     data_tup = (x_arr, y_arr)
     label_dic = {'xlabel':x_name, 'ylabel':y_name, 'dotsize':dot_size}
 
-    plot(*data_tup, [peak[0] for peak in peak_arr], **label_dic, pic_name='peakradg', clabel=r'$R$ ($\mu$m)', title=f'Peak Radius for Various {x_name} and {y_name}')
-    plot(*data_tup, [peak[1] for peak in peak_arr], **label_dic, pic_name='peakcrate', clabel=r'$\dot{R}$ ($\mu$m/s)', title=f'Peak Contraction Rate for Various {x_name} and {y_name}')
-    plot(*data_tup, [peak[2] for peak in peak_arr], **label_dic, pic_name='peakforce', clabel=r'F (pN)',  title=f'Peak Force for Various {x_name} and {y_name}')
-    plot(*data_tup, [peak[3] for peak in peak_arr], **label_dic, pic_name='peaktension', clabel=r'T (pN)',  title=f'Peak Tension for Various {x_name} and {y_name}')
-    plot(*data_tup, [peak[4] for peak in peak_arr], **label_dic, pic_name = 'inttension', clabel=r'$\Delta$p (pNs)', title=f'Time Integral of Tension for Various {x_name} and {y_name}')
-    plot(*data_tup, [peak[3] / y for peak, y in zip(peak_arr, y_arr)], **label_dic, pic_name='normpeaktension', clabel=r'T (pN)',  title=f'Normed Peak Tension for Various {x_name} and {y_name}')
-    plot(*data_tup, [peak[4] / y for peak, y in zip(peak_arr, y_arr)], **label_dic, pic_name = 'norminttension', clabel=r'$\Delta$p (pNs)', title=f'Normed Integral of Tension for Various {x_name} and {y_name}')
+    plot(*data_tup, [peak[0] for peak in peak_arr], **label_dic, pic_name='peakradg', clabel=r'$R$ ($\mu$m)', title=f'Peak Radius')
+    plot(*data_tup, [peak[1] for peak in peak_arr], **label_dic, pic_name='peakcrate', clabel=r'$\dot{R}$ ($\mu$m/s)', title=f'Peak Contraction Rate')
+    plot(*data_tup, [peak[2] for peak in peak_arr], **label_dic, pic_name='peakforce', clabel=r'F (pN)',  title=f'Peak Force')
+    plot(*data_tup, [peak[3] for peak in peak_arr], **label_dic, pic_name='peaktension', clabel=r'T (pN)',  title=f'Peak Tension')
+    plot(*data_tup, [peak[4] for peak in peak_arr], **label_dic, pic_name = 'inttension', clabel=r'$\Delta$p (pNs)', title=f'Time Integral of Tension')
+    plot(*data_tup, [peak[3] / y for peak, y in zip(peak_arr, y_arr)], **label_dic, pic_name='normpeaktension', clabel=r'T (pN)',  title=f'Normed Peak Tension')
+    plot(*data_tup, [peak[4] / y for peak, y in zip(peak_arr, y_arr)], **label_dic, pic_name = 'norminttension', clabel=r'$\Delta$p (pNs)', title=f'Normed Integral of Tension')
+
+    plot([peak[5] for peak in peak_arr], [peak[6] for peak in peak_arr], [abs(peak[5] - peak[6]) for peak in peak_arr], xlabel=r"Time at Contraction Rate Minimum ($\mu$m/s)", ylabel=r"Time at Tension Maximum ($\mu$m/s)", \
+            title="Time vs Time", clabel=r"$\Delta$t ($\mu$m/s)", pic_name='timevtime', dotsize=dot_size)
 
 #--------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
