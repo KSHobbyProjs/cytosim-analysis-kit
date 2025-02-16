@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 #
-# collect_pics.py creates an html page that includes a page for each directory given to it. Each page has all printed all pictures found in the directory
+# collect_pics.py creates an image concatenating all of the images in a directory for each directory given.
 #
 # Copyright K. Scarbro; 2025--
 
 """
-    Takes as input a list of directories assumed to have .png files in them; outputs an .html file with a page for each directory. Each page contains the .png files concatenated into a single picture.
-
-Required Packages:
-    PIL.image (install with pip via 'pip install PIL.image')
+    Takes as input a list of directories with .png files in them. Outputs a .png file in each input directory. The output .png file is
+    an image of all of the images in each input directory, grouped in a grid.
 
 Syntax:
-    collect_pics.py directory [...]
-    
+    collect_pics.py directory [...]    
     - directory: the directory (or directories) containing the .png files
 
 Output:
-    An .html file with a page corresponding to each directory input; each page containing the .png files from the directories grouped into a single image.
+    A group_image.png file in each directory. The group_image.png file will be a single image containing all of the images in the directory
+    grouped in a grid format.
 
 Examples:
     collect_pics.py directory
@@ -43,7 +41,7 @@ def collect_images(path, padding = 10):
     widths, heights = zip(*(image.size for image in images))
     
     total_width = 2 * max(widths) + padding
-    # the total height is the sum of every other image (since we're pasting two at a time)
+    # the total height is the sum of every other image (since we're pasting two in a row at a time)
     total_height = sum(heights[::2]) + padding * (len(images[::2]) - 1)
     output_image = PIL.Image.new('RGB', (total_width, total_height), color = 'white')
     y_offset = 0
@@ -71,13 +69,7 @@ def main(args):
             sys.exit()
 
     for p in paths:
-        # make new page for each path
-        
-        # collect all images in directory into one image:
         collect_images(p)
-
-    # construct .html header with button leading to each directory page
-    # save .html file
 
     return 0
 
