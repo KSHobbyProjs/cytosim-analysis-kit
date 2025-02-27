@@ -40,13 +40,16 @@ K. Scarbro 01.2025
 try:
     import sys, os
     import pickle
-    import matplotlib.pylab as plt
+    import matplotlib.pyplot as plt
 except ImportError:
     sys.stderr.write("Error: could not load necessary python modules\n")
     sys.exit(1)
 
-#----------------------------------------------------------------------------------
+#-----------------------------------PLOTTING-----------------------------------------------
 def plot(xdata, ydata, **kwargs):
+    """
+    produce plots of tension, crate, force, and radius in time
+    """
     fig, ax = plt.subplots()
 
     pic_name = 'plot'
@@ -64,7 +67,24 @@ def plot(xdata, ydata, **kwargs):
     ax.plot(xdata, ydata, dot_style, color=dot_color)
     plt.savefig(pic_name + '.png')
 
+#-------------------------DATA GRABBING-------------------------------------------------------------------------------------------------------------------------------------------------------------
+def grab_ee(path):
+    """
+    computes the average effective length of the fibers in time from the pkl file output by read_force.py acting on 'report fiber'
+    """
+
+    with open(path, 'rb') as file:
+        data = pickle.load(file)
+
+    for key, val in data.items()
+        if len(val[0]) != 10:
+            sys.stdout.write(f"{path} file does not contain the correct amount of columns of data. does this pkl file come from read_force.py acting on a file printed from 'report fiber'?\n")
+            sys.exit()
+
 def calc_data(path):
+    """
+    computes radius, contraction rate, force, and tension in time from pkl file output by read_force.py acting on 'report fiber:force'
+    """
     with open(path, 'rb') as file:
         data = pickle.load(file)
 
@@ -97,17 +117,21 @@ def calc_data(path):
 
     return [time_arr, radg_arr, crate_arr, force_arr, tension_arr]
 
+#----------------------------------------------------------------------------MAIN---------------------------------------------------------------------------------------------------------------
 def main(args):
     """
     read command line arguments and process commands
     """
     paths = []
     v = False
+    ee_files = None
     for arg in args:
         if os.path.isfile(arg):
             paths.append(os.path.abspath(arg))
         elif arg == '-v':
             v = True
+        elif arg.startswith('-ee:'):
+            ee_files = arg[9:]
         else:
             sys.stdout.write(f"{arg} isn't a filename\n")
             sys.exit()
@@ -119,7 +143,7 @@ def main(args):
     for p in paths:
         sys.stdout.write(f"grabbing data from {p}\n")
         time_arr, radg_arr, crate_arr, force_arr, tension_arr = calc_data(p)
-        
+     
         # if verbose, also output .pkl file including calculated stats
         if v:
             data = [time_arr, radg_arr, crate_arr, force_arr, tension_arr]
@@ -142,7 +166,7 @@ def main(args):
         
     return 0
 
-#------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     if len(sys.argv) < 2 or sys.argv[1].endswith("help"):
         print(__doc__)

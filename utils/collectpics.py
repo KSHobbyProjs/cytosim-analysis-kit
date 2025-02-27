@@ -26,7 +26,6 @@ K. Scarbro 02.2025
 try:
     import sys, os
     import PIL.Image
-    import math
 except ImportError:
     sys.stderr.write("Error: could not load necessary python modules\n")
     sys.exit(1)
