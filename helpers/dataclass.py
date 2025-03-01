@@ -26,7 +26,8 @@ class Data:
     
     each variable has an associated extract method that redefines that variable (and only that variable;
     e.g. calling extract_contractionrate will only redefine contraction rate, even though it extracts the
-    radius to calculate it). the extract methods also return the output 
+    radius to calculate it). the extract methods also return the output as lists; if time is available,
+    a tuple of the list of times and the list of the extracted stat will be output.
     """
     def __init__(self, report, directory):
         self._report = report
@@ -37,14 +38,10 @@ class Data:
         self.radius = None
         self.tension = None
         self.force = None
-        self.effective_length = None 
-        self.contraction_rate = None
-        self.tension_integral = None
+        self.effectivelength = None 
+        self.contractionrate = None
+        self.tensionintegral = None
 
-        # because of the varying types of peaks you can take, initialize peak
-        # data as an empty dictionary and allow user to populate it how they wish
-        self.peaks = dict()
-    
     def extract_time(self):
         # extract the list of times
         data = utools.readreport(self._report, "fiber:force", self._directory)
@@ -63,7 +60,7 @@ class Data:
         for key, val in data.items():
             times.append(key)
             
-            x, y, _, _, _ = val[1:]
+            x, y = val[1:3]
             xx, yy = [xi * xi for xi in x], [yi * yi for yi in y]
             RR = (1 / len(x)) * (sum(xx) + sum(yy)) - (( (1 / len(x)) * sum(x) )**2 + ( (1 / len(y)) * sum(y) )**2)
             radius.append(RR**.5)
@@ -79,7 +76,7 @@ class Data:
         for key, val in data.items():
             times.append(key)
 
-            _, _, fx, fy, _ = val[1:]
+            fx, fy = val[3:5]
             force.append((sum(fx)**2 + sum(fy)**2)**.5 / len(fx))
         
         # redefine variables
@@ -93,7 +90,7 @@ class Data:
         for key, val in data.items():
             times.append(key)
 
-            _, _, _, _, t = val[1:]
+            t = val[-1]
             tension.append(sum(t) / len(t))
         
         # redefine variables
@@ -126,17 +123,17 @@ class Data:
     def extract_effectivelength(self):
         # extract the effective length (end to end length over real length) of the fibers from 'report fiber'
         data = utools.readreport(self._report, 'fiber', self._directory)
-        effective_length, times = [], []
+        effectivelength, times = [], []
         
         for key, val in data.items():
             times.append(key)
 
             l, ee = val[2], val[7]
-            effective_length.append((1 / len(l)) * sum([eei / li for eei, li in zip(ee, l)]))
+            effectivelength.append((1 / len(l)) * sum([eei / li for eei, li in zip(ee, l)]))
        
         # redefine variables
-        self.effective_length = effective_length
-        return times, effective_length
+        self.effectivelength = effectivelength
+        return times, effectivelength
     
     def extract_contractionrate(self, use_old=False):
         # use finite difference to approximate contraction rate
@@ -150,14 +147,15 @@ class Data:
             self.radius = temp
 
         crate_arr = []
-        for i in range(1, len(times)):
-            dR = rads[i] - rads[i-1]
-            dt = times[i] - times[i-1]
+        for i in range(len(times) - 1):
+            dR = rads[i+1] - rads[i]
+            dt = times[i+1] - times[i]
             crate_arr.append(dR / dt)
         
         # redefine variables
-        self.contraction_rate = crate_arr
-        return times, crate_arr
+        self.contractionrate = crate_arr
+        # return times[:-1] instead of times since the contraction rate ignores the first time point
+        return times[:-1], crate_arr
     
     def extract_tensionintegral(self, use_old=False):
         # use quadrature to compute the integral of tension
@@ -169,41 +167,17 @@ class Data:
             times, tension = self.extract_tension()
             self.tension = temp
         
-        tension_integral = sum(tension[:-1]) * (times[1] - times[0])
+        tensionintegral = sum(tension[:-1]) * (times[1] - times[0])
         
-        self.tension_integral = tension_integral
-        return tension_integral
-
-    def extract_peak(self, peakname, xdata, tdata=None, peaktype=0):
-        # a wrapper for utools.extract_peak
-        # populates dictionary with peak data as you extract them
-        # the key of the entry added to the dicionary is given by peakname
-        peak = utools.extract_peak(xdata, tdata, peaktype)
-        self.peaks[peakname] = peak
+        self.tensionintegral = tensionintegral
+        return tensionintegral
 
     def extract_all(self):
-        self.extract_mainstats()
-        self.extract_effectivelength()
-        self.extract_contractionrate(use_old=True)
-        self.extract_tensionintegral(use_old=True)
-
-        self.extract_peak('peak_tension', self.tension, self.times)
-        self.extract_peak('peak_force', self.force, self.times, 1)
-        self.extract_peak('peak_radius', self.radius, self.times, 2)
-        self.extract_peak('peak_contractionrate', self.contraction_rate, self.times[1:])
-        self.extract_peak('peak_effectivelength', self.effective_length, self.times, 2)
-
-def plot(axis, xdata, ydata, **kwargs):
-    # plotting wrapper
-    ax = axis
-    pic_name = 'plot'
-    dot_color = 'orange'
-    dot_style = 'o-'
-    for key, val in kwargs.items():
-        if key == 'xlabel': ax.set_xlabel(val)
-        elif key == 'ylabel': ax.set_ylabel(val)
-        elif key == 'title': ax.set_title(val)
-        elif key == 'dot_color': dot_color = val
-        elif key == 'dot_style': dot_style = val
-        elif key == 'pic_name': pic_name = val
-    ax.plot(xdata, ydata, dot_style, color=dot_color)
+        # extract every listed statistic at one time
+        # returns all stats and instantiates every variable in the init method
+        output = ()
+        output += self.extract_mainstats()
+        output += (self.extract_contractionrate(use_old=True)[1],)
+        output += (self.extract_effectivelength()[1],) 
+        output += (self.extract_tensionintegral(use_old=True),)
+        return output

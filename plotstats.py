@@ -24,6 +24,7 @@ K. Scarbro 2.26.2025
 
 import os, sys
 import helpers.dataclass as dclass
+import helpers.plotting as plotting
 try:
     import matplotlib.pyplot as plt
 except ImportError:
@@ -57,11 +58,11 @@ def main(args):
         fig, ax = plt.subplots(3, 2, figsize=(15, 10))
         fig.delaxes(ax[2][1])
 
-        dclass.plot(ax[0][0], data.times, data.radius, xlabel='Time(s)', ylabel=r'$R$ ($\mu$m)', title='Radius')
-        dclass.plot(ax[0][1], data.times[1:], data.contraction_rate, xlabel='Time(s)', ylabel=r'$\dot{R}$ ($\mu$m/s)', title='Contraction Rate')
-        dclass.plot(ax[1][0], data.times, data.tension, xlabel='Time(s)', ylabel=r'$T$ (pN)', title='Tension')
-        dclass.plot(ax[1][1], data.times, data.force, xlabel='Time(s)', ylabel=r'$F$ (pN)', title='Force')
-        dclass.plot(ax[2][0], data.times, data.effective_length, xlabel='Time(s)', ylabel=r'$ee/l$', title='Effective Length')
+        plotting.plot(ax[0][0], data.times, data.radius, xlabel='Time(s)', ylabel=r'$R$ ($\mu$m)', title='Radius')
+        plotting.plot(ax[0][1], data.times[:-1], data.contraction_rate, xlabel='Time(s)', ylabel=r'$\dot{R}$ ($\mu$m/s)', title='Contraction Rate')
+        plotting.plot(ax[1][0], data.times, data.tension, xlabel='Time(s)', ylabel=r'$T$ (pN)', title='Tension')
+        plotting.plot(ax[1][1], data.times, data.force, xlabel='Time(s)', ylabel=r'$F$ (pN)', title='Force')
+        plotting.plot(ax[2][0], data.times, data.effective_length, xlabel='Time(s)', ylabel=r'$ee/l$', title='Effective Length')
         
         plt.tight_layout()
         # cd into directory, save picture, then cd back to cwd
