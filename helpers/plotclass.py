@@ -7,31 +7,61 @@
 """
 A helper module to handle all types of plotting as it pertains to Cytosim
 
+Plot class only needs to take an instance of the Param class, a list of
 K. Scarbro 2.28.25
 """
 
 import sys
 try:
     import matplotlib as plt
+    import matplotlib.widgets as widget
 except ImportError:
     sys.stderr.write("Error: could not load matplotlib\n")
     sys.exit()
 
 class Plot():
-    pass
+    def __init__(self, data):
+        self._fig, self._ax = fig, ax
+        self.xlabel = None
+        self.ylabel = None
+        self.title = None
 
-def plot(axis, xdata, ydata, **kwargs):
+    def initialize_interactive(self):
+        fig, ax = plt.subplots()
+        fig.subplots_adjust(left=0.25, bottom=0.25)
+        scatter = plotscatter(fig, ax)
+
+    def iterate(self):
+        pass
+
+
+def plot(ax, xdata, ydata, **kwargs):
     # plotting wrapper
-    ax = axis
-    pic_name = 'plot'
-    dot_color = 'orange'
-    dot_style = 'o-'
+    dotcolor = 'orange'
+    dotstyle = 'o-'
     for key, val in kwargs.items():
         if key == 'xlabel': ax.set_xlabel(val)
         elif key == 'ylabel': ax.set_ylabel(val)
         elif key == 'title': ax.set_title(val)
-        elif key == 'dot_color': dot_color = val
-        elif key == 'dot_style': dot_style = val
-        elif key == 'pic_name': pic_name = val
+        elif key == 'dotcolor': dotcolor = val
+        elif key == 'dotstyle': dotstyle = val
+        else: sys.stdout.write(f"{key} is an unknown parameter. Ignored.")
     ax.plot(xdata, ydata, dot_style, color=dot_color)
 
+def plotscatter(fig, ax, xdata, ydata, cdata, **kwargs):
+    clabel = None
+    dotsize = 200
+    for key, val in kwargs.items():
+        if key == 'xlabel': ax.set_xlabel(val)
+        elif key == 'ylabel': ax.set_ylabel(val)
+        elif key == 'title': ax.set_title(val)
+        elif key == 'clabel': clabel = val
+        elif key == 'dotsize': dot_size = val
+        else: sys.stdout.write(f"{key} is an unknown parameter. Ignored.")
+
+    pos = ax.scatter(xdata, ydata, c=cdata, cmap='viridis', s=dotsize)
+    fig.colorbar(pos, ax=ax, label=clabel)
+
+def plotdiagonal(ax):
+    xlims, ylims = ax.get_xlim(), ax.get_ylim()
+    ax.plot([xlims[0], xlims[1]], [xlims[0], xlims[1]], color='red', linestyle='--')

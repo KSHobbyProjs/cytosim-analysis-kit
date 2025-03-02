@@ -26,13 +26,17 @@ class Data:
     
     each variable has an associated extract method that redefines that variable (and only that variable;
     e.g. calling extract_contractionrate will only redefine contraction rate, even though it extracts the
-    radius to calculate it). the extract methods also return the output as lists; if time is available,
-    a tuple of the list of times and the list of the extracted stat will be output.
+    radius to calculate it). the class methods are split into three sections: the first section extracts stats
+    that depend on time; these methods return a tuple of the time list along with the extracted statistic (the self.times
+    variable is not changed). the second section is for statistics that don't depend on time; these methods output
+    just the statistic. the third section is for extract methods that calculate multiple statistics at a time; these
+    methods output a tuple of all asked for statistics, along with time, if available.
     """
     def __init__(self, report, directory):
         self._report = report
         self._directory = directory
         
+        # all variables possible to be extracted listed below
         # initialize all data variables as None, so they can be set later
         self.times = None
         self.radius = None
@@ -42,7 +46,7 @@ class Data:
         self.contractionrate = None
         self.tensionintegral = None
 
-    def extract_time(self):
+    def extract_times(self):
         # extract the list of times
         data = utools.readreport(self._report, "fiber:force", self._directory)
         times = []
@@ -53,6 +57,7 @@ class Data:
         self.times = times
         return times
 
+    # ------------------------------------------------------- EXTRACT METHODS FOR STATISTICS THAT DEPEND ON TIME ------------------------------------------
     def extract_radius(self):
         # extract the times and radius at each time from the sim
         data = utools.readreport(self._report, "fiber:force", self._directory)
@@ -97,29 +102,6 @@ class Data:
         self.tension = tension
         return times, tension
     
-    def extract_mainstats(self):
-        # extract times and radii, force, and tension at each time
-        data = utools.readreport(self._report, "fiber:force", self._directory)
-        times, radius, tension, force = [], [], [], []
-        for key, val in data.items():
-            times.append(key)
-
-            x, y, fx, fy, t = val[1:]
-            # radius
-            xx, yy = [xi * xi for xi in x], [yi * yi for yi in y]
-            RR = (1 / len(x)) * (sum(xx) + sum(yy)) - (( (1 / len(x)) * sum(x) )**2 + ( (1 / len(y)) * sum(y) )**2)
-            radius.append(RR**.5)
-            
-            # force
-            force.append((sum(fx)**2 + sum(fy)**2)**.5 / len(fx))
-            
-            # tension
-            tension.append(sum(t) / len(t))
-        
-        # redefine the variables
-        self.times, self.radius, self.tension, self.force = times, radius, tension, force
-        return times, radius, tension, force    
-
     def extract_effectivelength(self):
         # extract the effective length (end to end length over real length) of the fibers from 'report fiber'
         data = utools.readreport(self._report, 'fiber', self._directory)
@@ -157,6 +139,7 @@ class Data:
         # return times[:-1] instead of times since the contraction rate ignores the first time point
         return times[:-1], crate_arr
     
+    # ---------------------------------------------------------------------EXTRACT METHODS FOR STATISTICS THAT DON'T DEPEND ON TIME--------------------------------------
     def extract_tensionintegral(self, use_old=False):
         # use quadrature to compute the integral of tension
         # if use_old is set to false, recalculate the tension
@@ -172,6 +155,30 @@ class Data:
         self.tensionintegral = tensionintegral
         return tensionintegral
 
+    # ----------------------------------------------------------------------EXTRACT METHODS THAT EXTRACT MORE THAN ONE VARIABLE AT A TIME---------------------------------
+    def extract_mainstats(self):
+        # extract times and radii, force, and tension at each time
+        data = utools.readreport(self._report, "fiber:force", self._directory)
+        times, radius, tension, force = [], [], [], []
+        for key, val in data.items():
+            times.append(key)
+
+            x, y, fx, fy, t = val[1:]
+            # radius
+            xx, yy = [xi * xi for xi in x], [yi * yi for yi in y]
+            RR = (1 / len(x)) * (sum(xx) + sum(yy)) - (( (1 / len(x)) * sum(x) )**2 + ( (1 / len(y)) * sum(y) )**2)
+            radius.append(RR**.5)
+            
+            # force
+            force.append((sum(fx)**2 + sum(fy)**2)**.5 / len(fx))
+            
+            # tension
+            tension.append(sum(t) / len(t))
+        
+        # redefine the variables
+        self.times, self.radius, self.tension, self.force = times, radius, tension, force
+        return times, radius, tension, force  
+    
     def extract_all(self):
         # extract every listed statistic at one time
         # returns all stats and instantiates every variable in the init method

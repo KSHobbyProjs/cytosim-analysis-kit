@@ -79,11 +79,11 @@ def extract_peak(xdata, tdata=None, peaktype=0):
 
     return output
 
-def readconfig(path, numparams=2):
+def readconfig(directory, numparams=2):
     """
     helper function to help create parameter maps. reads parameter values from a config file
     and outputs them in a list
-    - path: path to simulation directory with config file in it
+    - directory: path to simulation directory with config file in it
     - numparams: the number of parameters listed at the top of the config file
     assumes that the values the parameters are listed at the top of the config file
     in either the form %####%####... or %#### (or even of some form  %####%####...n times )
@@ -95,7 +95,10 @@ def readconfig(path, numparams=2):
     representing the sim with 1000 motors and 5000 fibers could look like %1000%5000 or %1000;
     readconfig reads these numbers and outputs them as the list [1000,5000].            %5000 
     """
-    file_name = path + 'config.cym'
+    # cd into directory path to find config file
+    cwd = os.getcwd()
+    os.chdir(directory)
+    file_name = 'config.cym'
     if os.path.exists(file_name):
         with open(file_name, 'r') as file:
             params = []
@@ -112,6 +115,8 @@ def readconfig(path, numparams=2):
         raise FileNotFoundError(f"config file at {file_name} not found\n")
   
     params = [float(param) for param in params]
+    # cd back into cwd
+    os.chdir(cwd)
     return params
 
 
