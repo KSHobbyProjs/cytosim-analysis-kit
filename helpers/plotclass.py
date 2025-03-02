@@ -46,7 +46,7 @@ def plot(ax, xdata, ydata, **kwargs):
         elif key == 'dotcolor': dotcolor = val
         elif key == 'dotstyle': dotstyle = val
         else: sys.stdout.write(f"{key} is an unknown parameter. Ignored.")
-    ax.plot(xdata, ydata, dot_style, color=dot_color)
+    ax.plot(xdata, ydata, dotstyle, color=dotcolor)
 
 def plotscatter(fig, ax, xdata, ydata, cdata, **kwargs):
     clabel = None
@@ -56,7 +56,7 @@ def plotscatter(fig, ax, xdata, ydata, cdata, **kwargs):
         elif key == 'ylabel': ax.set_ylabel(val)
         elif key == 'title': ax.set_title(val)
         elif key == 'clabel': clabel = val
-        elif key == 'dotsize': dot_size = val
+        elif key == 'dotsize': dotsize = val
         else: sys.stdout.write(f"{key} is an unknown parameter. Ignored.")
 
     pos = ax.scatter(xdata, ydata, c=cdata, cmap='viridis', s=dotsize)
