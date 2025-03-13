@@ -24,6 +24,8 @@ class Param:
     """
     handles storing of parameter information
     
+    for instantiation: needs path to report binary and a list of the directories
+    
     self.params has length = number of parameter types. each row in self.params will be one type of parameter, and each value in each
     row will be the value of that parameter type for a given simulation
 
@@ -71,7 +73,6 @@ class Param:
         returns a list of peak data. if time at the peaks is given, the list will be comprised of two elements. the first
         element is the list of the times at which the peaks occur and the second element is the list of peak values
         """
-        peaks = []
         if nproc > 1:
             # if parallel, create a job for each directory, and run the stat worker in each directory across processors
             nproc = min(nproc, len(self._directories))
@@ -83,7 +84,7 @@ class Param:
                 managerlist = manager.list()
                 # append an empty list to the manager for each directory
                 for _ in range(len(self._directories)):
-                    managerlist.append([])
+                    managerlist.append(0)
                 # create a list of jobs that run worker with the given args
                 jobs = []
                 for _ in range(nproc):
@@ -92,9 +93,10 @@ class Param:
                     j.start()
                 for j in jobs:
                     j.join()
-                return list(managerlist) 
+                peaks = list(managerlist) 
         else:
             # if serial, then go to each directory, read the data (by calling the stat worker directly), and populate the peak array in serial
+            peaks = []
             for direc in self._directories:
                 peaks.append(self._extractpeaks_worker(direc, stat, peaktype))
 
@@ -212,8 +214,8 @@ class Param:
             vals = eval(evaltool)
      
             if isinstance(vals, tuple):
-                tpeak, peak = utools.extract_peak(vals[1], tdata=vals[0], peaktype=peaktype)
-                peak = (tpeak, peak)
+                tpeak, ppeak = utools.extract_peak(vals[1], tdata=vals[0], peaktype=peaktype)
+                peak = (tpeak, ppeak)
             elif isinstance(vals, list):
                 peak, = utools.extract_peak(vals, peaktype=peaktype)
             elif isinstance(vals, float) or isinstance(vals, int):
@@ -254,4 +256,3 @@ class Param:
             mancrate[i] = utools.extract_peak(vals[4], tdata=vals[0][:-1], peaktype=0)
             maneelength[i] = utools.extract_peak(vals[5], tdata=vals[0], peaktype=2)
             mantensionintegral[i] = vals[6]
-

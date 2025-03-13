@@ -112,7 +112,7 @@ def readconfig(directory, numparams=2):
                 else:
                     raise ValueError(f"the first lines of the config file at {file_name} contain less than {numparams} parameters\n")
     else:
-        raise FileNotFoundError(f"config file at {file_name} not found\n")
+        raise FileNotFoundError(f"config file at {directory} not found\n")
   
     params = [float(param) for param in params]
     # cd back into cwd

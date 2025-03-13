@@ -23,7 +23,9 @@ class Data:
     """
     handles statistics of a simulation. needs what type of report to use and what directory the sim is in
     init method has all stats that can be extracted. they start unpopulated. 
-    
+   
+    for instantiation: needs path to the report binary and a list of the directories
+
     each variable has an associated extract method that redefines that variable (and only that variable;
     e.g. calling extract_contractionrate will only redefine contraction rate, even though it extracts the
     radius to calculate it). the class methods are split into three sections: the first section extracts stats
