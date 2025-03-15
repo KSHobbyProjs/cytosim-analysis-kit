@@ -5,9 +5,18 @@
 # Copyright K. Scarbro; 2025--
 
 """
-A helper module to extract parameter information from directories. 
+A helper module to extract parameter information from directories.
 
-K. Scarbro 2.27.2025
+extract_paramvals() will read the config file in each directory to grab the values of the parameters
+extract_peaks(stat, peaktype, nproc) will use the dataclass module to extract a statistic and find its
+    peak (peaktype tells the function what type of peak to take). stat is a string of one of the statistics
+    from the dataclass module (ex: 'radius'). all statistics from dataclass are covered. if it's one of the 
+    dataclass statistics that output multiple statistics (like 'all' or 'mainstats'), extract_peaks will
+    output a dictionary where the keys are the stats output, and the vals are the peak data
+
+each call of extract_peaks updates the self.peaks variable with the stat and its peak info
+
+K. Scarbro 3.15.2025
 """
 
 import sys
@@ -51,27 +60,17 @@ class Param:
         self.params = param_list
         return param_list
 
-    def _parallel_worker(self, queue, managerlist, worker, *args):
-        """
-        a wrapper function that wraps all worker-type functions
-        """
-        while True:
-            try:
-                i, direc = queue.get(True, 1)
-            except:
-                break;
-            print(f"working on directory {direc}")
-            managerlist[i] = worker(direc, *args)
-
     # ---------------------------------------------EXTRACT PEAKS METHOD FOR ANY STATS THAT DEPEND ON TIME OR STATS THAT DON'T DEPEND ON TIME------------------------------
     def extract_peaks(self, stat, peaktype=0, nproc=1):
         """
         calculates the peak value of a statistic in each sim directory and outputs them in a list
         - stat: the statistic you want to take the peak values of in the form of a string (ex: 'radius')
-        - peaktype: the type of peak to calculate
+        - peaktype: the type of peak to calculate; this is only necessary if stat != mainstats and stat != all
         - nproc: the number of processors to use. nproc=1 is serial
         returns a list of peak data. if time at the peaks is given, the list will be comprised of two elements. the first
         element is the list of the times at which the peaks occur and the second element is the list of peak values
+        if stat == mainstats or stat == all, the output will be a dictionary where the keys are the type of stat, and the values
+        are the lists of peak data
         """
         if nproc > 1:
             # if parallel, create a job for each directory, and run the stat worker in each directory across processors
@@ -100,159 +99,93 @@ class Param:
             for direc in self._directories:
                 peaks.append(self._extractpeaks_worker(direc, stat, peaktype))
 
-        # if the peaks contain the tdata, zip the times together and the peaks together
-        if isinstance(peaks[0], tuple):
-            peaks = [list(elem) for elem in zip(*peaks)]
+
+        # if the peaks come from a worker that returns many stats at once (extractall_worker or extractmainstats_worker),
+        # the worker outputs a list of dictionaries where the key is a stat name and the value is the result; unpack
+        # the dictionary and use it to update self.peaks; then, return a dictionary zipping the list of dictionaries
+        if isinstance(peaks[0], dict):
+            keys = list(peaks[0].keys())
+            vals = [list(elem) for elem in zip(*[peak.values() for peak in peaks])]
+            for i, val in enumerate(vals):
+                if isinstance(val[0], tuple):
+                    vals[i] = [list(vali) for vali in zip(*val)]
+            for key, val in zip(keys, vals):
+                self.peaks[key] = val
+            return dict(zip(keys, vals))
+        # otherwise, the output of the worker should be a list of floats / ints or a list
+        # of 2d tuples (the first index being the time of the peak, and the second element 
+        # being the peak). if the output is a 2d tuple, zip the times together and the peaks together
+        elif isinstance(peaks[0], tuple):
+            peaks = [list(peak) for peak in zip(*peaks)]
+            self.peaks[stat] = peaks
         # change variable
         self.peaks[stat] = peaks
         return peaks
 
-# ------------------------------ EXTRACT PEAK METHODS FOR EXTRACT METHODS IN DATA CLASS THAT OUTPUT MORE THAN ONE STATISTIC AT A TIME -------------------
-    def extract_mainpeaks(self, nproc=1):
-        # grab the peaks of the radius, tension, and force at the same time
-        
-        if nproc > 1:
-            # if parallel, create a separate job for each directory
-            nproc = min(len(self._directories), nproc)
-            with mp.Manager() as manager:
-                queue = mp.Queue()
-                for i, direc in enumerate(self._directories):
-                    queue.put((i, direc))
-                manradius = manager.list()
-                mantension = manager.list()
-                manforce = manager.list()
-                for i in range(len(self._directories)):
-                    manradius.append(0)
-                    mantension.append(0)
-                    manforce.append(0)
-                jobs = []
-                for n in range(nproc):
-                    j = mp.Process(target=self._extractmainpeaks_worker, args=(queue, manradius, mantension, manforce))
-                    jobs.append(j)
-                    j.start()
-                for j in jobs:
-                    j.join()
-                peakradius = list(manradius)
-                peaktension = list(mantension)
-                peakforce = list(manforce)
-        else:
-            # serial
-            peakradius, peaktension, peakforce = [], [], []
-            for direc in self._directories:
-                data = dclass.Data(self._report, direc)
-                vals = data.extract_mainstats()
-                peakradius.append(utools.extract_peak(vals[1], tdata=vals[0], peaktype=2))
-                peaktension.append(utools.extract_peak(vals[2], tdata=vals[0], peaktype=0))
-                peakforce.append(utools.extract_peak(vals[3], tdata=vals[0], peaktype=1))
-
-        # change dictionary variables (these depend on time, so rezip the peak data so that it's a list with time as the first element and peak as the other)
-        self.peaks['radius'] = [list(elem) for elem in zip(*peakradius)]
-        self.peaks['tension'] = [list(elem) for elem in zip(*peaktension)]
-        self.peaks['force'] = [list(elem) for elem in zip(*peakforce)]
-        return peakradius, peaktension, peakforce
-
-    def extract_allpeaks(self, nproc=1):
-        # grab the peaks of radius, tension, force, contraction rate, effective length, and grab the integral of the tension
-        if nproc > 1:
-            # if parallel, create a separate job for each directory
-            nproc = min(len(self._directories), nproc)
-            with mp.Manager() as manager:
-                queue = mp.Queue()
-                for i, direc in enumerate(self._directories):
-                    queue.put((i, direc))
-                manradius = manager.list()
-                mantension = manager.list()
-                manforce = manager.list()
-                mancrate = manager.list()
-                maneelength = manager.list()
-                mantensionintegral = manager.list()
-                for i in range(len(self._directories)):
-                    manradius.append(0)
-                    mantension.append(0)
-                    manforce.append(0)
-                    mancrate.append(0)
-                    maneelength.append(0)
-                    mantensionintegral.append(0)
-                jobs = []
-                for n in range(nproc):
-                    j = mp.Process(target=self._extractallpeaks_worker, args=(queue, manradius, mantension, manforce, mancrate, maneelength, mantensionintegral))
-                    jobs.append(j)
-                    j.start()
-                for j in jobs:
-                    j.join()
-                peakradius = list(manradius)
-                peaktension = list(mantension)
-                peakforce = list(manforce)
-                peakcrate = list(mancrate)
-                peakeelength = list(maneelength)
-                tensionintegral = list(mantensionintegral)
-        else:
-            peakradius, peaktension, peakforce, peakcrate, peakeelength, tensionintegral = [], [], [], [], [], []
-            for direc in self._directories:
-                data = dclass.Data(self._report, direc)
-                vals = data.extract_all()
-                peakradius.append(utools.extract_peak(vals[1], tdata=vals[0], peaktype=2))
-                peaktension.append(utools.extract_peak(vals[2], tdata=vals[0], peaktype=0))
-                peakforce.append(utools.extract_peak(vals[3], tdata=vals[0], peaktype=1))
-                peakcrate.append(utools.extract_peak(vals[4], tdata=vals[0][:-1], peaktype=0))
-                peakeelength.append(utools.extract_peak(vals[5], tdata=vals[0], peaktype=2))
-                tensionintegral.append(vals[6])
-        
-        # change dictionary variables (rezipping the ones that depend on time)
-        self.peaks['radius'] = [list(elem) for elem in zip(*peakradius)]
-        self.peaks['tension'] = [list(elem) for elem in zip(*peaktension)]
-        self.peaks['force'] = [list(elem) for elem in zip(*peakforce)]
-        self.peaks['contractionrate'] = [list(elem) for elem in zip(*peakcrate)]
-        self.peaks['effectivelength'] = [list(elem) for elem in zip(*peakeelength)]
-        self.peaks['tensionintegral'] = tensionintegral
-        return peakradius, peaktension, peakforce, peakcrate, peakeelength, tensionintegral 
 
     # ----------------------------------------------------------------------------WORKERS----------------------------------------------------------------------------
     def _extractpeaks_worker(self, direc, stat, peaktype):
-            data = dclass.Data(self._report, direc)
-            evaltool = 'data.extract_' + stat + '()'
-            vals = eval(evaltool)
+        """
+        worker for all stats
+        """
+        # if the stat is mainstats or all, then redirect to a different worker since these need to be handled differently
+        # than all other stat types
+        if stat == 'mainstats':
+            return self._extractmainstats_worker(direc)
+        if stat == 'all':
+            return self._extractall_worker(direc)
+
+        data = dclass.Data(self._report, direc)
+        evaltool = 'data.extract_' + stat + '()'
+        vals = eval(evaltool)
      
-            if isinstance(vals, tuple):
-                tpeak, ppeak = utools.extract_peak(vals[1], tdata=vals[0], peaktype=peaktype)
-                peak = (tpeak, ppeak)
-            elif isinstance(vals, list):
-                peak, = utools.extract_peak(vals, peaktype=peaktype)
-            elif isinstance(vals, float) or isinstance(vals, int):
-                peak = vals
-            else:
-                raise TypeError("Error: extract output must be of the form tuple, list, float, or int\n")
-            return peak
+        if isinstance(vals, tuple):
+            tpeak, ppeak = utools.extract_peak(vals[1], tdata=vals[0], peaktype=peaktype)
+            peak = (tpeak, ppeak)
+        elif isinstance(vals, list):
+            peak, = utools.extract_peak(vals, peaktype=peaktype)
+        elif isinstance(vals, float) or isinstance(vals, int):
+            peak = vals
+        else:
+            raise TypeError("Error: extract output must be of the form tuple, list, float, or int\n")
+        return peak
 
+    def _extractmainstats_worker(self, direc):
+        """
+        worker function for the stats output by extract_mainstats
+        """
+        data = dclass.Data(self._report, direc)
+        vals = data.extract_mainstats()
+        peak = dict()
+        peak['radius'] = utools.extract_peak(vals[1], tdata=vals[0], peaktype=2)
+        peak['tension'] = utools.extract_peak(vals[2], tdata=vals[0], peaktype=0)
+        peak['force'] = utools.extract_peak(vals[3], tdata=vals[0], peaktype=1)
+        return peak
 
-    def _extractmainpeaks_worker(self, queue, manradius, mantension, manforce):
+    def _extractall_worker(self, direc):
+        """
+        worker function for the stats output by extract_all
+        """
+        data = dclass.Data(self._report, direc)
+        vals = data.extract_all()
+        peak = dict()
+        peak['radius'] = utools.extract_peak(vals[1], tdata=vals[0], peaktype=2)
+        peak['tension'] = utools.extract_peak(vals[2], tdata=vals[0], peaktype=0)
+        peak['force'] = utools.extract_peak(vals[3], tdata=vals[0], peaktype=1)
+        peak['contractionrate'] = utools.extract_peak(vals[4], tdata=vals[0][:-1], peaktype=0)
+        peak['effectivelength'] = utools.extract_peak(vals[5], tdata=vals[0], peaktype=2)
+        peak['tensionintegral'] = vals[6]
+        return peak
+    
+    def _parallel_worker(self, queue, managerlist, worker, *args):
+        """
+        a wrapper function that wraps all worker-type functions when using parallel
+        """
         while True:
             try:
                 i, direc = queue.get(True, 1)
             except:
                 break;
             print(f"working on directory {direc}")
-            
-            data = dclass.Data(self._report, direc)
-            vals = data.extract_mainstats()
-            manradius[i] = utools.extract_peak(vals[1], tdata=vals[0], peaktype=2)
-            mantension[i] = utools.extract_peak(vals[2], tdata=vals[0], peaktype=0)
-            manforce[i] = utools.extract_peak(vals[3], tdata=vals[0], peaktype=1)
-            
+            managerlist[i] = worker(direc, *args)
 
-    def _extractallpeaks_worker(self, queue, manradius, mantension, manforce, mancrate, maneelength, mantensionintegral):
-        while True:
-            try:
-                i, direc = queue.get(True, 1)
-            except:
-                break;
-            print(f"working on directory {direc}")
-
-            data = dclass.Data(self._report, direc)
-            vals = data.extract_all()
-            manradius[i] = utools.extract_peak(vals[1], tdata=vals[0], peaktype=2)
-            mantension[i] = utools.extract_peak(vals[2], tdata=vals[0], peaktype=0)
-            manforce[i] = utools.extract_peak(vals[3], tdata=vals[0], peaktype=1)
-            mancrate[i] = utools.extract_peak(vals[4], tdata=vals[0][:-1], peaktype=0)
-            maneelength[i] = utools.extract_peak(vals[5], tdata=vals[0], peaktype=2)
-            mantensionintegral[i] = vals[6]

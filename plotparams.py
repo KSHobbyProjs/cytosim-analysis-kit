@@ -75,7 +75,7 @@ def main(args):
     # extract parameter information, and populate Param class with parameter information
     params = pclass.Param(report, paths)
     params.extract_paramvals()
-    params.extract_allpeaks(nproc=nproc)
+    params.extract_peaks('all', nproc=nproc)
 
     # plot the scatter plots of the peak data. it's possible to generalize this to make it shorter, but it's not very readable
     fig, ax = plt.subplots(3, 3, figsize=(15, 15))
