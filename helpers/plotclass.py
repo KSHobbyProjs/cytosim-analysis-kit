@@ -9,7 +9,7 @@ A helper module to handle all types of plotting as it pertains to Cytosim
 
 Dependencies:
     - matplotlib: install with pip via 'pip install matplotlib'
-    - QtPy6: install with pip via 'pip install QtPy6'
+    - PyQt6: install with pip via 'pip install PyQt6'
 
 Plot class only needs to take an instance of the Param class, a list of
 K. Scarbro 2.28.25
@@ -105,12 +105,11 @@ class Plot():
 
     def _changemaxscale(self, maxscale):
         current_min = self._cbar.vmin
-        self._cbar.remove()
-        self._cbar = self._fig.colorbar(self._scatter, ax=self._ax, label=self.
-        self._cbar.set_clim(current_min, float(maxscale))
+        self._scatter.set_clim(current_min, float(maxscale)) 
 
     def _changeminscale(self, minscale):
-        print(f'{minscale}')
+        current_max = self._cbar.vmax
+        self._scatter.set_clim(float(minscale), current_max)
 
 def plot(ax, xdata, ydata, **kwargs):
     # plotting wrapper
