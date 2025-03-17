@@ -77,7 +77,7 @@ def main(args):
             sys.stdout.write(f"unknown input: {arg}\n")
             sys.exit()
 
-    if not paths:
+    if not paths and useold is None:
         sys.stdout.write("no directories were given\n")
         sys.exit()
 
