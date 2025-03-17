@@ -13,13 +13,13 @@ Required Packages:
     matplotlib (install with 'pip install matplotlib')
 
 Syntax:
-    plotparams.py directory [...more directories...] [report='~/Cytosim/cytosim/bin/report'] [name=None] [dotsize=200] [-i] [nproc=1] [-v] [useold=False]
+    plotparams.py directory [...more directories...] [report='~/Cytosim/cytosim/bin/report'] [useold=None] [nproc=1] [name=None] [dotsize=200] [-i] [-v]
     - directory: the paths to the directories containing simulation information
     - name: the name of the parameters given separated by a comma (example: name=motors,fibers)
     - dotsize: the size of the parameter dots (default is 200)
     - -i: this sets the plotting environment into interactive mode, allowing for plot adjustments in real time
     - -v: output the pickle file of the param class so you won't have to calculate the peaks again
-    - useold: use an old pickle file rather than computing the peaks again. useold=False of useold=[path to pickle file]
+    - useold: use an old pickle file rather than computing the peaks again. useold=None of useold=[path to pickle file]
     - report: the path to the report binary. default is '~/Cytosim/cytosim/bin/report'
     - nproc: the number of processors. nproc=1 (serial) is the default
 Output:

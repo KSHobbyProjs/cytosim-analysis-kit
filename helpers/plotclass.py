@@ -52,24 +52,29 @@ class Plot():
 
     def plot_interactive(self):
         self._fig.subplots_adjust(right=0.75)
-        self._ax.text(1.25, .95, 'color scale', transform=self._ax.transAxes)
-        
-        ax_zscalemin = self._fig.add_axes([0.80, .8, 0.1, 0.025])
-        ax_zscalemax = self._fig.add_axes([0.80, .75, 0.1, 0.025]) 
-        ax_dotsize = self._fig.add_axes([0.82, .65, 0.1, 0.025])
-        ax_prevplot = self._fig.add_axes([0.80, .55, 0.05, 0.025])
-        ax_nextplot = self._fig.add_axes([0.85, .55, 0.05, 0.025])
-
+        # text that says color scale
+        ax_text = self._fig.add_axes([0.85, .85, 0.1, 0.025])
+        ax_text.set_axis_off()
+        ax_text.text(0, 0, 'color scale', transform=ax_text.transAxes)
+        # widget axes
+        ax_zscalemin = self._fig.add_axes([0.85, .8, 0.1, 0.025])
+        ax_zscalemax = self._fig.add_axes([0.85, .75, 0.1, 0.025]) 
+        ax_dotsize = self._fig.add_axes([0.87, .65, 0.1, 0.025])
+        ax_prevplot = self._fig.add_axes([0.82, .60, 0.05, 0.025])
+        ax_nextplot = self._fig.add_axes([0.87, .60, 0.05, 0.025])
+        # widgets
         textbox_zscalemin = widget.TextBox(ax_zscalemin, 'min', textalignment='center')
         textbox_zscalemax = widget.TextBox(ax_zscalemax, 'max', textalignment='center')
         textbox_dotsize = widget.TextBox(ax_dotsize, 'dotsize', textalignment='center')
         button_prevplot = widget.Button(ax_prevplot, 'prev')
         button_nextplot = widget.Button(ax_nextplot, 'next')
-
+        
+        # scatter plot and colorbar
         self._scatter, self._cbar = plotscatter(self._fig, self._ax, self.xdata[0], self.ydata[0], self.zdata[0], \
                 xlabel=self.xlabels[0], ylabel=self.ylabels[0], title=self.titles[0], \
                 clabel=self.zlabels[0])
         
+        # widget actions 
         button_nextplot.on_clicked(self._nextplot)
         button_prevplot.on_clicked(self._prevplot)
         textbox_zscalemin.on_submit(self._changeminscale)
